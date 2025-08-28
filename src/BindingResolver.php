@@ -3,6 +3,7 @@
 namespace Laravel\Wayfinder;
 
 use Illuminate\Database\Eloquent\Model;
+use Throwable;
 
 class BindingResolver
 {
@@ -20,13 +21,18 @@ class BindingResolver
             return [null, $key];
         }
 
-        self::$columns[$routable] ??= $booted->getConnection()->getSchemaBuilder()->getColumns($booted->getTable());
+        try {
+            self::$columns[$routable] ??= $booted->getConnection()->getSchemaBuilder()->getColumns($booted->getTable());
 
-        return [
-            collect(self::$columns[$routable])->first(
-                fn ($column) => $column['name'] === $key,
-            )['type_name'] ?? null,
-            $key,
-        ];
+            return [
+                collect(self::$columns[$routable])->first(
+                    fn ($column) => $column['name'] === $key,
+                )['type_name'] ?? null,
+                $key,
+            ];
+
+        } catch (Throwable) {
+            return [null, $key];
+        }
     }
 }
